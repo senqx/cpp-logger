@@ -30,7 +30,11 @@ void Logger::print(uint8_t mode, std::string &text) {
     std::string time = std::ctime(&n_time);
     time.pop_back();
     std::string output = color_mode + time+ " [" + type + "] \t" + text + " \033[0m\n";
-    std::cout << output;
+    if(mode) {
+        std::cout << output;
+    } else {
+        std::cerr << output;  
+    }
     ++_file_write_count;
 }
 
@@ -100,7 +104,7 @@ void Logger::info(std::string text) {
     }
 }
 
-void Logger::log(std::string text) {
+void Logger::debug(std::string text) {
     print(2, text);
     if(_write_to_file) {
         _file << text;
