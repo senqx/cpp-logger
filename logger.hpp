@@ -15,7 +15,7 @@ class Logger {
     /// The print body
     static void print(uint8_t mode, std::string &text);
 
-    /// The File descriptor for logging also into a file
+    /// The File descriptor for logging (also) into a file
     static std::fstream _file;
 
     /// Flag, to check if you want also to log into a file
@@ -34,7 +34,7 @@ public:
     /// Set mode (but if you like to use words instead of numbers)
     static void set_mode(std::string code);
 
-    /// Specify the log output file name (also sets the flag)
+    /// Specify the log output file name (also sets the "_write_to_flag" flag)
     static void set_output_filename(std::string filename);
 
     /// Print Error
@@ -47,7 +47,7 @@ public:
     static void info(std::string text);
 
     /// Print Log
-    static void log(std::string text);
+    static void debug(std::string text);
 
 };
 
