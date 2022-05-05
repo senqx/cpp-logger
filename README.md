@@ -21,7 +21,7 @@ Commands
 Logger::set_mode(MODE); where MODE is either 0, 1, 2 or error, warning, default (method is case insensetive)
 # Can be used anywhere in code (for example you want your code to print in one mode, after some time, you can freely change it to another)
 
-Logger::set_output_filename(FILENAME); where FILENAME is the name of output file (creates the file if it didn't exist)
+Logger::set_output_filename(FILENAME); where FILENAME is the name of output file (creates the file if it didn't exist, overwrites it otherwise)
 
 Logger::error(TEXT)
 Logger::warning(TEXT)
