@@ -9,7 +9,7 @@
 
 /// Class Logger, simple class for better logging
 class Logger {
-    /// Mode, the mode that will be used for logging. 0: only errors and debug messages, 1: print warnings, errors and debug messages, 2: print everything
+    /// Mode, the mode that will be used for logging. 0: only errors and info, 1: print warnings, errors and info, 2: print everything
     static uint8_t _mode;
 
     /// The print body
