@@ -26,14 +26,14 @@ This is my very first project in github, any suggestions are welcome
 
 # Commands
 
-# Setting mode
-Can be used anywhere in code (for example you want your code to print in one mode, after some time, you can freely change it to another)
+## Setting mode
+### Can be used anywhere in code (for example you want your code to print in one mode, after some time, you can freely change it to another)
 Logger::set_mode(MODE); where MODE is either 0, 1, 2 or error, warning, default (method is case insensetive)
 
-# Setting log file (creates the file if it didn't exist, overwrites it otherwise)
+## Setting log file (creates the file if it didn't exist, overwrites it otherwise)
 Logger::set_output_filename(FILENAME); where FILENAME is the name of output file 
 
-# Logging functions
+## Logging functions
 Logger::error(TEXT);
 Logger::warning(TEXT);
 Logger::info(TEXT);
