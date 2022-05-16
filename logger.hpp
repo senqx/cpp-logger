@@ -49,6 +49,9 @@ public:
     /// Print Log
     static void debug(std::string text);
 
+    /// Close the output file
+    static void file_close();
+
 };
 
 #endif

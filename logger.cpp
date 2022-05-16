@@ -18,24 +18,38 @@ void Logger::print(uint8_t mode, std::string &text) {
             type = "WARNING";
             break;
         case 2:
-            type = "INFO";
-            color_mode = "\033[1;37m"; // Info
+            type = "DEBUG";
+            color_mode = "\033[1;37m"; // Debug
             break;
         default:
-            type = "MESSAGE";
-            color_mode = "\033[1;37m"; // Message (Default)
+            type = "INFO";
+            color_mode = "\033[1;37m"; // Info (Default)
     }
     auto _time = std::chrono::system_clock::now();
     std::time_t n_time = std::chrono::system_clock::to_time_t(_time);
     std::string time = std::ctime(&n_time);
     time.pop_back();
-    std::string output = color_mode + time+ " [" + type + "] \t" + text + " \033[0m\n";
+    std::string output = time+ " [" + type + "] \t" + text;
+
     if(mode) {
-        std::cout << output;
+        std::cout << color_mode << output << "\033[0m\n";
     } else {
-        std::cerr << output;  
+        std::cerr << color_mode << output << "\033[0m\n";
     }
-    ++_file_write_count;
+
+    if(_write_to_file) {
+        ++_file_write_count;
+        _file << output << '\n';
+        if(mode < 2) {
+            _file.flush();
+            _file_write_count = 0;
+        } else {
+            if (_file_write_count == 100) {
+                _file.flush();
+                _file_write_count = 0;
+            }
+        }
+    }
 }
 
 void Logger::set_mode(uint8_t mode=0) {
@@ -73,44 +87,28 @@ void Logger::set_output_filename(std::string filename) {
 
 void Logger::error(std::string text) {
     print(0, text);
-    if(_write_to_file) {
-        _file << text;
-        _file.flush();
-        _file_write_count = 0;
-    }
 }
 
 void Logger::warning(std::string text) {
     if(_mode >= 1) {
         print(1, text);
-        if(_write_to_file) {
-            _file << text;
-            _file.flush();
-            _file_write_count = 0;
-        }
-    }
-}
-
-void Logger::info(std::string text) {
-    if(_mode == 2) {
-        print(2, text);
-        if(_write_to_file) {
-            _file << text;
-            if (_file_write_count == 100) {
-                _file.flush();
-                _file_write_count = 0;
-            }
-        }
     }
 }
 
 void Logger::debug(std::string text) {
-    print(2, text);
+    if(_mode == 2) {
+        print(2, text);
+    }
+}
+
+void Logger::info(std::string text) {
+    print(3, text);
+}
+
+void Logger::file_close() {
     if(_write_to_file) {
-        _file << text;
-        if (_file_write_count == 100) {
-            _file.flush();
-            _file_write_count = 0;
-        }
+        _file.close();
+    } else {
+        warning("To close the log file descriptor, first make sure to open it!");
     }
 }
