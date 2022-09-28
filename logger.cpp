@@ -64,11 +64,11 @@ void Logger::set_mode(std::string code) {
         code[i] = tolower(code[i]);
     }
 
-    if(code == "error") {
+    if(code == "error" || code == "Error") {
         _mode = 0;
-    } else if (code == "warning") {
+    } else if (code == "warning" || code == "Warning") {
         _mode = 1;
-    } else if (code == "default") {
+    } else if (code == "default" || code == "Default") {
         _mode = 2;
     } else {
         warning("Wrong mode number, so default is set instead");
