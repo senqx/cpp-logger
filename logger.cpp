@@ -1,11 +1,21 @@
-#include "logger.hpp"
+#include "logger.h"
 
-uint8_t Logger::_mode = 0;
+#include <cctype>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <string>
+
+int Logger::_mode = 0;
 bool Logger::_write_to_terminal = false;
 size_t Logger::_file_write_count = 0;
 std::fstream Logger::_file;
 
-void Logger::print(uint8_t mode, std::string &text) {
+void Logger::print(const std::string& text, const int mode) {
+  if(!_file.is_open()) {
+    set_output_filename("output.log");
+  }
 	std::string color_mode;
 	std::string type;
 	switch(mode) {
@@ -26,11 +36,11 @@ void Logger::print(uint8_t mode, std::string &text) {
 			color_mode = "\033[1;37m"; // Info (Default)
 	}
 
-	auto _time = std::chrono::system_clock::now();
-	std::time_t n_time = std::chrono::system_clock::to_time_t(_time);
+	const auto& _time = std::chrono::system_clock::now();
+	const std::time_t n_time = std::chrono::system_clock::to_time_t(_time);
 	std::string time = std::ctime(&n_time);
 	time.pop_back();
-	std::string output = time + " [" + type + "] \t" + text;
+	const std::string& output = time + " [" + type + "] \t" + text;
 
 	++_file_write_count;
 	_file << output << '\n';
@@ -53,60 +63,25 @@ void Logger::print(uint8_t mode, std::string &text) {
 	}
 }
 
-void Logger::set_mode(uint8_t mode=0) {
-	if(mode > 2) {
-		warning("Wrong mode number, so default is set instead");
-	}
-	_mode = mode;
-}
-
-void Logger::set_mode(std::string code) {
-	for(int i = 0; i < code.size(); ++i) {
-		code[i] = tolower(code[i]);
-	}
-
-	if(code == "error" || code == "Error") {
+void Logger::set_mode(const std::string& mode) {
+	if(mode == "error" || mode == "Error") {
 		_mode = 0;
-	} else if (code == "warning" || code == "Warning") {
+	} else if (mode == "warning" || mode == "Warning") {
 		_mode = 1;
-	} else if (code == "default" || code == "Default") {
+	} else if (mode == "default" || mode == "Default") {
 		_mode = 2;
 	} else {
-		warning("Wrong mode number, so default is set instead");
+		warning("Wrong mode name, so default is set instead");
 		_mode = 2;
 	}
 }
 
-void Logger::set_output_filename(std::string filename) {
+void Logger::set_output_filename(const std::string& filename) {
 	_file.open(filename, std::ios::out);
 	if(!_file.is_open()) {
 		// File wasn't opened so, using error() would be nonsense
-		std::cerr << "Couldn't open file: ", filename;
+		std::cerr << "Couldn't open file: " << filename << std::endl;
 		exit(1);
 	}
-}
-
-void Logger::set_terminal_output(bool arg) {
-	_write_to_terminal = arg;
-}
-
-void Logger::error(std::string text) {
-	print(0, text);
-}
-
-void Logger::warning(std::string text) {
-	if(_mode >= 1) {
-		print(1, text);
-	}
-}
-
-void Logger::debug(std::string text) {
-	if(_mode == 2) {
-		print(2, text);
-	}
-}
-
-void Logger::info(std::string text) {
-	print(3, text);
 }
 
