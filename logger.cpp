@@ -1,87 +1,85 @@
 #include "logger.h"
 
-#include <cctype>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <string>
+#include <mutex>
+#include <sstream>
+#include <string_view>
 
-int Logger::_mode = 0;
-bool Logger::_write_to_terminal = false;
-size_t Logger::_file_write_count = 0;
-std::fstream Logger::_file;
+std::ofstream Logger::s_file;
+bool Logger::s_write_to_terminal = false;
+std::mutex Logger::s_mutex;
 
-void Logger::print(const std::string& text, const int mode) {
-  if(!_file.is_open()) {
-    set_output_filename("output.log");
+static constexpr std::string_view COLOR_CODES[] = {
+  "\033[1;31m", // Error (Red)
+  "\033[1;33m", // Warning (Yellow)
+  "\033[1;37m", // Info (White)
+  "\033[1;36m"  // Debug (Cyan)
+};
+
+static constexpr std::string_view LOG_TYPE_PREFIXES[] = {
+  "[Error] ",
+  "[Warning] ",
+  "[Info] ",
+  "[Debug] "
+};
+
+void Logger::enable_file_output(std::string_view filename) {
+  std::lock_guard<std::mutex> lock(s_mutex);
+
+  if (std::filesystem::exists(filename.data())) {
+    int version = 1;
+    std::string new_filename;
+    do {
+      new_filename = std::string(filename) + "_v" + std::to_string(version);
+      ++version;
+    } while (std::filesystem::exists(new_filename));
+
+    filename = new_filename;
   }
-	std::string color_mode;
-	std::string type;
-	switch(mode) {
-		case 0:
-			color_mode = "\033[1;31m"; // Error
-			type = "ERROR";
-			break;
-		case 1:
-			color_mode = "\033[1;33m"; // Warning
-			type = "WARNING";
-			break;
-		case 2:
-			type = "DEBUG";
-			color_mode = "\033[1;37m"; // Debug
-			break;
-		default:
-			type = "INFO";
-			color_mode = "\033[1;37m"; // Info (Default)
-	}
 
-	const auto& _time = std::chrono::system_clock::now();
-	const std::time_t n_time = std::chrono::system_clock::to_time_t(_time);
-	std::string time = std::ctime(&n_time);
-	time.pop_back();
-	const std::string& output = time + " [" + type + "] \t" + text;
-
-	++_file_write_count;
-	_file << output << '\n';
-    if(mode < 2) {
-		_file.flush();
-		_file_write_count = 0;
-	} else {
-		if (_file_write_count == 100) {
-			_file.flush();
-			_file_write_count = 0;
-		}
-	}
-
-	if(_write_to_terminal) {
-		if(mode) {
-			std::cout << color_mode << output << "\033[0m\n";
-		} else {
-			std::cerr << color_mode << output << "\033[0m\n";
-		}
-	}
+  s_file.open(filename.data(), std::ios::out | std::ios::trunc);
+  if (!s_file.is_open()) {
+    std::cerr << "Failed to open log file: " << filename << std::endl;
+  }
 }
 
-void Logger::set_mode(const std::string& mode) {
-	if(mode == "error" || mode == "Error") {
-		_mode = 0;
-	} else if (mode == "warning" || mode == "Warning") {
-		_mode = 1;
-	} else if (mode == "default" || mode == "Default") {
-		_mode = 2;
-	} else {
-		warning("Wrong mode name, so default is set instead");
-		_mode = 2;
-	}
-}
+void Logger::print(std::string_view text, MsgType type) {
+  std::lock_guard<std::mutex> lock(s_mutex);
 
-void Logger::set_output_filename(const std::string& filename) {
-	_file.open(filename, std::ios::out);
-	if(!_file.is_open()) {
-		// File wasn't opened so, using error() would be nonsense
-		std::cerr << "Couldn't open file: " << filename << std::endl;
-		exit(1);
-	}
-}
+#ifdef NDEBUG
+  static int log_count = 0;
+#endif
 
+  std::ostringstream output;
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t time = std::chrono::system_clock::to_time_t(now);
+  std::string timestamp = std::ctime(&time);
+  timestamp[timestamp.size() - 1] = ' '; // Change newline into a space.
+
+  output << timestamp << LOG_TYPE_PREFIXES[static_cast<int>(type)] << text;
+
+  // Terminal output with color
+  if (s_write_to_terminal) {
+    (type == MsgType::Error ? std::cerr : std::cout)
+      << COLOR_CODES[static_cast<int>(type)] << output.str() << "\033[0m\n";
+  }
+
+  // File output with batch flushing
+  if (s_file.is_open()) {
+    s_file << output.str() << '\n';
+
+#ifdef NDEBUG
+    ++log_count
+    if (log_count >= 500) {
+        s_file.flush();
+        log_count = 0;
+    }
+#else
+    s_file.flush();
+#endif
+  }
+}
