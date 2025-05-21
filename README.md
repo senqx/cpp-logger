@@ -1,47 +1,85 @@
-# cpp-logger
-## Simple logger for c++
-**logger** has 3 modes **Default or 0, Warning or 1, Debug or 2**<br>
-**logger** has 4 logging types: **Info, Debug, Warning** and **Error** where<br>
-  * **Info** prints in white (in any mode)<br>
-  * **Debug** prints also in white but only in **Debug** mode (mode = 2)<br>
-  * **Warning** prints in yellow (mode >= 1 that is **Warning** and **Debug**)<br>
-  * **Error** prints in red (in any mode)<br>
+# Logger - Lightweight C++ Logging Utility
 
-## All types print date and time
-You can also set the **output file name** to log both into the terminal and the file<br>
-The **logger** is very simple<br>
-You can even include as 1 file (cat logger.hpp logger.cpp > cpplogger)<br>
-Everyone are welcome to use, modify, and share this logger in any project that they want<br>
+## Overview
+Logger is a thread-safe, lightweight logging utility for C++ applications, designed to support both terminal and file-based logging with customizable log levels.
 
-_This is my very first project in github, any suggestions are welcome_
+## Features
+- Thread-safe logging with mutex protection.
+- Supports terminal and file output.
+- ANSI color-coded logs for improved readability.
+- Configurable log levels (Error, Warning, Info, Debug).
+- Works on Windows and Linux/macOS.
+- Lightweight and easy to integrate into existing projects.
 
-# Commands
-## Setting mode
-### Can be used anywhere in code (for example you want your code to print in one mode, after some time, you can freely change it to another)
-```C++
-Logger::set_mode(_MODE_);
-```
-where _MODE_ is either _0_, _1_, _2_ or _error_, _warning_, _default_ (method is case insensetive)
+## Installation
+1. Clone the repository:
+   git clone https://github.com/yourusername/logger.git
+2. Include `logger.h` and `logger.cpp` in your project.
+3. Compile normally with your project.
 
-## Setting log file (creates the file if it didn't exist, overwrites it otherwise)
-```C++
-Logger::set_output_filename(_FILENAME_);
-```
-where _FILENAME_ is the name of output file 
+## Usage
+### Basic Setup
+```cpp
+#include "logger.h"
 
-## If you want to see your log also on terminal
-```C++
-Logger::set_terminal_output(true); // enable
-// ...
-// Some code
-// ...
-Logger::set_terminal_output(false); // disable
+int main() {
+    Logger::enable_terminal_output();
+    Logger::enable_file_output("app.log");
+
+    Logger::error("This is a critical error!");
+    Logger::warning("This is a warning.");
+    Logger::info("This is an informational message.");
+    Logger::debug("Debugging details here.");
+    
+    return 0;
+}
 ```
 
-## Logging functions
-```C++
-Logger::error(_TEXT_);
-Logger::warning(_TEXT_);
-Logger::info(_TEXT_);
-Logger::debug(_TEXT_);
+### Logging Levels
+The default logging level is Debug in development mode (`#ifndef NDEBUG`), but Info in release mode (`#define NDEBUG`).
+
+Log Level | Description | Color
+--------- | ----------- | ------
+Error     | Critical errors | Red
+Warning   | Potential issues | Yellow
+Info      | Informational logs | White
+Debug     | Debugging details | Cyan
+
+### File Output
+```cpp
+Logger::enable_file_output("logs.txt");
 ```
+
+Logs are automatically flushed and saved when the program exits.
+
+## Running the Example
+To build and run the example program:
+1. Compile the project:
+```
+make
+```
+or for debugging:
+```
+make debug
+```
+2. Run the executable:
+```
+./bin/logger_test_release
+```
+or for debugging:
+```
+./bin/logger_test_debug
+```
+3. To clean build artifacts:
+```
+make clean
+```
+
+## Future Enhancements
+- Asynchronous logging with a queue system.
+- Configurable log format (JSON, CSV).
+- Log file rotation support.
+
+## License
+MIT License. Free to use and modify.
+
