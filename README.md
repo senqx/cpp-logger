@@ -1,85 +1,55 @@
-# Logger - Lightweight C++ Logging Utility
+# cpp-logger
 
-## Overview
-Logger is a thread-safe, lightweight logging utility for C++ applications, designed to support both terminal and file-based logging with customizable log levels.
+A small synchronous C++17 logger with terminal and file output. It provides Error, Warning, Info and Debug levels without third-party dependencies.
 
-## Features
-- Thread-safe logging with mutex protection.
-- Supports terminal and file output.
-- ANSI color-coded logs for improved readability.
-- Configurable log levels (Error, Warning, Info, Debug).
-- Works on Windows and Linux/macOS.
-- Lightweight and easy to integrate into existing projects.
+## Quick start
 
-## Installation
-1. Clone the repository:
-   git clone https://github.com/yourusername/logger.git
-2. Include `logger.h` and `logger.cpp` in your project.
-3. Compile normally with your project.
+```sh
+git clone https://github.com/senqx/cpp-logger.git
+cd cpp-logger
+make
+./bin/logger_test_release
+```
 
-## Usage
-### Basic Setup
+Build tools: a C++17 compiler, GNU Make and thread support. Linux is verified; Windows console-color support is implemented but not tested here.
+
+To integrate it, add `include/` to your include path and compile `src/logger.cpp` with your application. Use consistent `NDEBUG` settings across all translation units. On Linux, compile and link with `-pthread`.
+
 ```cpp
 #include "logger.h"
 
 int main() {
     Logger::enable_terminal_output();
     Logger::enable_file_output("app.log");
-
-    Logger::error("This is a critical error!");
-    Logger::warning("This is a warning.");
-    Logger::info("This is an informational message.");
-    Logger::debug("Debugging details here.");
-    
-    return 0;
+    Logger::info("Application started");
+    Logger::warning("Disk space is low");
+    Logger::error("Could not open input");
+    Logger::debug("Development details");
 }
 ```
 
-### Logging Levels
-The default logging level is Debug in development mode (`#ifndef NDEBUG`), but Info in release mode (`#define NDEBUG`).
+## Behavior
 
-Log Level | Description | Color
---------- | ----------- | ------
-Error     | Critical errors | Red
-Warning   | Potential issues | Yellow
-Info      | Informational logs | White
-Debug     | Debugging details | Cyan
+- Terminal output is disabled until enabled. Error messages use `stderr`; other levels use `stdout`.
+- Release builds with `NDEBUG` omit Debug messages. Development builds include all four levels and print startup diagnostics.
+- Records use local timestamps: `YYYY-MM-DD HH:MM:SS [Info] message`.
+- POSIX terminal output includes ANSI colors, including when redirected. Windows enables colors when its console supports them.
+- File output contains no color codes. Opening a file truncates it; opening another flushes and closes the previous file. Parent directories must already exist.
+- Log writes, file changes and terminal toggles use one mutex. There is no background queue, rotation or runtime level selection.
+- Errors and Debug messages flush immediately. Release builds also flush periodically; normal process exit flushes and closes the file. Abnormal termination can lose buffered output.
 
-### File Output
-```cpp
-Logger::enable_file_output("logs.txt");
-```
+This is a small utility, not a durable audit log. File-open failures are reported to `stderr`; write failures are not exposed through the API. Avoid logging from static constructors/destructors or signal handlers.
 
-Logs are automatically flushed and saved when the program exits.
+## Development
 
-## Running the Example
-To build and run the example program:
-1. Compile the project:
-```
-make
-```
-or for debugging:
-```
+```sh
 make debug
-```
-2. Run the executable:
-```
-./bin/logger_test_release
-```
-or for debugging:
-```
 ./bin/logger_test_debug
-```
-3. To clean build artifacts:
-```
-make clean
+make test
 ```
 
-## Future Enhancements
-- Asynchronous logging with a queue system.
-- Configurable log format (JSON, CSV).
-- Log file rotation support.
+`make test` requires Python 3 and checks release/debug levels, file reopening, non-null-terminated filename views, and concurrent logging. Build variants use separate object directories so switching modes does not reuse incompatible objects.
 
 ## License
-MIT License. Free to use and modify.
 
+[MIT](LICENSE).

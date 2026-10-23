@@ -2,6 +2,8 @@
 
 #include <chrono>
 #include <ctime>
+#include <cstdlib>
+#include <string>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -73,7 +75,12 @@ void Logger::cleanup() {
 
 void Logger::enable_file_output(std::string_view filename) {
   std::lock_guard<std::mutex> lock(s_mutex);
-  s_file.open(filename.data(), std::ios::out | std::ios::trunc);
+  if (s_file.is_open()) {
+    s_file.flush();
+    s_file.close();
+  }
+  s_file.clear();
+  s_file.open(std::string(filename), std::ios::out | std::ios::trunc);
   if (!s_file.is_open()) {
     std::cerr << "Failed to open log file: " << filename << std::endl;
   }
@@ -111,7 +118,11 @@ void Logger::print(std::string_view text, MsgType type, bool shouldFlush) {
     if (s_ansi_supported) {
       out << COLOR_CODES[index];
     }
-    out << oss.str() << "\033[0m\n";
+    out << oss.str();
+    if (s_ansi_supported) {
+      out << "\033[0m";
+    }
+    out << '\n';
     if (shouldFlush) {
       out.flush();
     }

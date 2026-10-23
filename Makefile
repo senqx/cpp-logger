@@ -1,49 +1,28 @@
-# Compiler settings
-CXX         = g++
-CXXFLAGS    = -Wall -Wextra -Werror -Iinclude
+CXX ?= g++
+CPPFLAGS += -Iinclude
+CXXFLAGS += -std=c++17 -Wall -Wextra -Werror -pthread
+LDLIBS += -pthread
 
-# Paths
-SRC         = src/logger.cpp
-EXAMPLES    = examples/demo.cpp
-OBJ_DIR     = obj
-BIN_DIR     = bin
-OBJ         = $(OBJ_DIR)/logger.o
-
-# Executables
-RELEASE_TARGET = $(BIN_DIR)/logger_test_release
-DEBUG_TARGET   = $(BIN_DIR)/logger_test_debug
-
-# Build options
-RELEASE_CXXFLAGS = -O3 -DNDEBUG
-DEBUG_CXXFLAGS   = -g -DDEBUG
-
-# Default target (release)
+.PHONY: all release debug test clean
 all: release
+release: bin/logger_test_release
+debug: bin/logger_test_debug
 
-# Ensure required directories exist
-$(BIN_DIR) $(OBJ_DIR):
-	mkdir -p $@
-
-# Release build (Optimized, removes debug info)
-release: CXXFLAGS += $(RELEASE_CXXFLAGS)
-release: $(BIN_DIR) $(OBJ_DIR) $(RELEASE_TARGET)
-
-# Debug build (Includes debugging symbols)
-debug: CXXFLAGS += $(DEBUG_CXXFLAGS)
-debug: $(BIN_DIR) $(OBJ_DIR) $(DEBUG_TARGET)
-
-# Compilation rules
-$(RELEASE_TARGET): $(OBJ) $(EXAMPLES) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJ) $(EXAMPLES)
-
-$(DEBUG_TARGET): $(OBJ) $(EXAMPLES) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJ) $(EXAMPLES)
-
-# Object file compilation (incremental builds)
-$(OBJ): $(SRC) | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $(SRC) -o $(OBJ)
-
-# Clean build artifacts (removes binaries and object files)
+obj/release/logger.o: src/logger.cpp include/logger.h
+	mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O3 -DNDEBUG -MMD -MP -c $< -o $@
+obj/debug/logger.o: src/logger.cpp include/logger.h
+	mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O0 -g -UNDEBUG -MMD -MP -c $< -o $@
+bin/logger_test_release: examples/demo.cpp obj/release/logger.o include/logger.h
+	mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O3 -DNDEBUG examples/demo.cpp obj/release/logger.o $(LDLIBS) -o $@
+bin/logger_test_debug: examples/demo.cpp obj/debug/logger.o include/logger.h
+	mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O0 -g -UNDEBUG examples/demo.cpp obj/debug/logger.o $(LDLIBS) -o $@
+test: release debug
+	python3 tests/test_logger.py
 clean:
-	rm -f $(OBJ) $(RELEASE_TARGET) $(DEBUG_TARGET)
-	rm -rf $(BIN_DIR) $(OBJ_DIR)
+	rm -rf bin obj
+
+-include obj/release/logger.d obj/debug/logger.d

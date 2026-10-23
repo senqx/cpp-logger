@@ -1,5 +1,5 @@
-#ifndef __LOGGER__
-#define __LOGGER__
+#ifndef CPP_LOGGER_H
+#define CPP_LOGGER_H
 
 #include <fstream>
 #include <mutex>
@@ -75,13 +75,17 @@ public:
    * @brief Enables terminal output for logs.
    */
   static void enable_terminal_output() {
+    std::lock_guard<std::mutex> lock(s_mutex);
     s_write_to_terminal = true;
   }
 
   /*!
    * @brief Disables terminal output for logs.
    */
-  static void disable_terminal_output() { s_write_to_terminal = false; }
+  static void disable_terminal_output() {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_write_to_terminal = false;
+  }
 
   /*!
    * @brief Logs an error message.
@@ -122,4 +126,4 @@ public:
   }
 };
 
-#endif // __LOGGER__
+#endif // CPP_LOGGER_H
